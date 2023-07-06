@@ -1,0 +1,112 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+{% comment %}
+<div class="row p-3 border border-primary">
+{% with with_workstatus=True %}
+{% endwith %}
+  abc
+</div>
+{% endcomment %}
+
+<div class="row">
+  <div class="col-12 col-md-8 col-lg-6">
+    <ul>
+      {% for m in messages %}
+      <li><div {% if m.tags %}class="{{ m.tags }} m-2"{% endif %}>
+	  {{m}}
+	</div></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12 col-md-8 col-lg-6">
+    <div class="lead col-12 text-center">
+      {% now "Y年n月j日(D) G時i分" %}<br />
+      ようこそ<br />
+      {% if user.is_authenticated %}
+      {{ user.division }} {{ user.get_full_name }} さん
+      {% else %}
+      せきとり君へ
+      {% endif %}
+    </div>
+
+    {% if user.is_authenticated %}
+    <div class="d-flex justify-content-end">
+      <a href="{% url 'account:login' %}" class="m-2">ユーザ切り替え</a>
+      <a href="{% url 'account:logout' %}" class="m-2">ログアウト</a>
+    </div>
+    {% else %}
+    <div class="d-flex justify-content-center">
+      <a href="{% url 'account:login' %}" class="col-8 btn btn-primary">
+	ログイン</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row my-4">
+  <div class="col-12">
+    <a href="{% url 'main:top' prev_month.year prev_month.month %}">前月</a>
+    <div>{{target_month|date:"Y年n月"}}</div>
+    <a href="{% url 'main:top' next_month.year next_month.month %}">次月</a>
+    <form method="post">{% csrf_token %}
+      <div class="table-responsive table-view-area">
+	<table class="table table-success table-striped table-sm">
+	  <thead>
+	    <tr>
+	      <th scope="col" class="px-2"></th>
+	      {% for d in target_days %}
+	      <td scope="col" class="px-2 th-top-sticky text-nowrap">
+		{{d|date:"j(D)"}}</td>
+	      {% endfor %}
+	    </tr>
+	  </thead>
+	  <tbody>
+	    {% for sdl in seat_list %}
+	    <tr>
+	      <th scope="row" class="px-2 th-left-sticky text-nowrap">
+		{{sdl.seat}}</th>
+	      {% for d in sdl.q %}
+	      <td scope="row" class="px-2 text-nowrap">
+		{% if d is None %}
+		□
+		{% else %}
+		{{d.get_full_name}}
+		{% endif %}
+	      </td>
+	      {% endfor %}
+	    </tr>
+	    {% empty %}
+	    <tr><th></th><td class="row">(ありません)</td><td></td></tr>
+	    {% endfor %}
+	  </tbody>
+	</table>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<style>
+  .table-view-area {
+      height: 80vh;
+  }
+  .th-top-sticky {
+      position: sticky;
+      top: 0;
+  }
+  .th-left-sticky {
+      position: sticky;
+      left: 0;
+  }
+</style>
+<script>
+  (function($){
+      // console.log("Hello, world")
+  })(jQuery);
+</script>
+{% endblock %}

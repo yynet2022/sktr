@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    
+    <title>せきとり君</title>
+  </head>
+  <body>
+
+    {% if request.META.HTTP_USER_AGENT %}
+    {% if "MSIE" in request.META.HTTP_USER_AGENT or "Trident" in request.META.HTTP_USER_AGENT %}
+    <h1>お知らせ</h1>
+    <div>
+      このサイトは Microsoft Internet Explorer (MSIE) に対応していません。<br />
+      Google Chrome の使用をお勧めします。<br />
+      UserAgent is "{{request.META.HTTP_USER_AGENT}}"
+    </div>
+    {% else %}
+    <!-- UserAgent is "{{request.META.HTTP_USER_AGENT}}" -->
+    {% endif %}
+    {% endif %}
+    
+    {% block menubar %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container-fluid">
+	<a class="navbar-brand" href="{% url 'main:top' %}">せきとり君</a>
+      </div>
+    </nav>  
+    {% endblock %}
+
+    {% block content0 %}
+    <div class="container mt-3">
+      {% block content %}{% endblock %}
+    </div>
+    {% endblock %}
+
+    {% block footer %}
+    <hr>
+    <div class="text-end m-3">
+      {# Copyright (C) 2022 ○○○. All Rights Reserved. #}
+      <span class="fst-italic">Powered by YYNET.</span>
+    </div>
+    {% endblock %}
+
+<!-- Optional JavaScript; choose one of the two! -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+
+<!-- Option 1: Bootstrap Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
+<script>
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+  return new bootstrap.Tooltip(tooltipTriggerEl)
+})
+</script>
+
+<!-- Option 2: Separate Popper and Bootstrap JS -->
+<!--
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+-->
+
+    {% block extrajs %}
+    {% endblock %}
+  </body>
+</html>
