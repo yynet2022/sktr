@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from django.shortcuts import redirect
 from django.views import generic
-from django.utils import timezone
 from django.urls import reverse
+from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django import forms
 from . import apps, models
 import datetime
@@ -12,7 +12,7 @@ import datetime
 User = get_user_model()
 
 
-class MonthMixin:
+class MonthUtils:
     def __init__(self, year=None, month=None, **kwargs):
         if year is None or month is None:
             self.target = datetime.date.today().replace(day=1)
@@ -42,7 +42,7 @@ class MonthMixin:
     @property
     def days(self):
         t = self.target
-        return [t.replace(day=t.day+i) for i in range(self.last_day.day)]
+        return [t.replace(day=i+1) for i in range(self.last_day.day)]
 
 
 class TopView(generic.FormView):
@@ -58,24 +58,97 @@ class TopView(generic.FormView):
         return reverse('main:top')
 
     def get_context_data(self, **kwargs):
-        q = MonthMixin(**self.kwargs)
-        days = q.days
-        arr = [None,] * len(days)
+        m = MonthUtils(**self.kwargs)
+        days = m.days
+        abase = [None] * len(days)
         seats = models.Seat.objects.filter(is_active=True)
 
-        def _get_seat_list():
+        def _get_seat_reserves():
             for s in seats:
-                a = arr.copy()
-                for q in models.Reserve.objects.filter(
+                a = abase.copy()
+                for r in models.Reserve.objects.filter(
                         seat=s, date__range=(days[0], days[-1])):
-                    a[q.date.day-1] = q.user
-                yield {'seat': s.name, 'q': a}
+                    a[r.date.day-1] = r.user
+                yield {'seat': s, 'reserves': a}
 
         kwargs.update({
-            'target_month': q.target,
+            'target_month': m.target,
             'target_days': days,
-            'prev_month': q.prev_month,
-            'next_month': q.next_month,
-            'seat_list': _get_seat_list(),
+            'prev_month': m.prev_month,
+            'next_month': m.next_month,
+            'seat_reserves': _get_seat_reserves(),
         })
         return super().get_context_data(**kwargs)
+
+
+class ReserveException(Exception):
+    pass
+
+
+class ReserveView(generic.RedirectView):
+    def get_redirect_url(self, *args, **kwargs):
+        kwargs = None
+        if self.request.user.is_authenticated:
+            user = self.request.user
+
+            sid = self.kwargs.get('seatid')
+            year = self.kwargs.get('year')
+            month = self.kwargs.get('month')
+            day = self.kwargs.get('day')
+            kwargs = {'year': year, 'month': month}
+
+            date = datetime.date(year=year, month=month, day=day)
+            seat = models.Seat.objects.get(id=sid)
+            lookup = {'seat': seat, 'date': date}
+            try:
+                s1 = '{}月{}日'.format(date.month, date.day)
+
+                r = models.Reserve.objects.filter(**lookup)
+                if r.exists():
+                    s2 = r[0].seat.name
+                    raise ReserveException(
+                        f'{s1} の <{s2}> は、既に予約されています。')
+
+                r = models.Reserve.objects.filter(user=user, date=date)
+                if r.exists():
+                    s2 = r[0].seat.name
+                    raise ReserveException(
+                        f'{s1} は既に <{s2}> を予約しています。')
+
+                with transaction.atomic():
+                    models.Reserve.objects.create(user=user, **lookup)
+                    # 同時に予約して、ダブルブッキングになってないか確認。
+                    models.Reserve.objects.get(**lookup)
+
+                s2 = seat.name
+                messages.success(self.request,
+                                 f'{s1} の <{s2}> を予約しました。')
+            except Exception as e:
+                messages.warning(self.request, '予約失敗: ' + str(e))
+
+        return reverse('main:top', kwargs=kwargs)
+
+
+class CancelView(generic.RedirectView):
+    def get_redirect_url(self, *args, **kwargs):
+        kwargs = None
+        if self.request.user.is_authenticated:
+            year = self.kwargs.get('year')
+            month = self.kwargs.get('month')
+            day = self.kwargs.get('day')
+            kwargs = {'year': year, 'month': month}
+
+            user = self.request.user
+            date = datetime.date(year=year, month=month, day=day)
+            lookup = {'user': user, 'date': date}
+            try:
+                with transaction.atomic():
+                    models.Reserve.objects.filter(**lookup).delete()
+
+                s1 = '{}月{}日'.format(date.month, date.day)
+                messages.success(self.request,
+                                 f'{s1} の予約をキャンセルしました。')
+            except Exception as e:
+                messages.warning(self.request, 'キャンセル失敗: ' + str(e))
+
+        return reverse('main:top', kwargs=kwargs)

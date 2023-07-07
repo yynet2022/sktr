@@ -23,7 +23,7 @@ def main():
         make_seats(20)
 
     seats = []
-    for s in Seat.objects.all():
+    for s in Seat.objects.filter(is_active=True):
         print(s)
         seats.append(s)
 
@@ -31,11 +31,18 @@ def main():
         make_users(20)
 
     users = []
-    for u in User.objects.all():
+    for u in User.objects.filter(is_active=True):
         print(u)
         users.append(u)
 
-    for i in range(10):
+    if not Reserve.objects.exists():
+        make_reserves(users, seats, 20)
+    for r in Reserve.objects.all():
+        print(r)
+
+
+def make_reserves(users, seats, n):
+    for i in range(n):
         s = seats[int(random.random()*len(seats))]
         u = users[int(random.random()*len(users))]
         t = datetime.date.today()

@@ -49,9 +49,11 @@
 
 <div class="row my-4">
   <div class="col-12">
-    <a href="{% url 'main:top' prev_month.year prev_month.month %}">前月</a>
-    <div>{{target_month|date:"Y年n月"}}</div>
-    <a href="{% url 'main:top' next_month.year next_month.month %}">次月</a>
+    <div>
+      <a href="{% url 'main:top' prev_month.year prev_month.month %}">前月</a>
+      {{target_month|date:"Y年n月"}}
+      <a href="{% url 'main:top' next_month.year next_month.month %}">次月</a>
+    </div>
     <form method="post">{% csrf_token %}
       <div class="table-responsive table-view-area">
 	<table class="table table-success table-striped table-sm">
@@ -65,16 +67,20 @@
 	    </tr>
 	  </thead>
 	  <tbody>
-	    {% for sdl in seat_list %}
+	    {% for sr in seat_reserves %}
 	    <tr>
 	      <th scope="row" class="px-2 th-left-sticky text-nowrap">
-		{{sdl.seat}}</th>
-	      {% for d in sdl.q %}
+		{{sr.seat.name}}</th>
+	      {% for r in sr.reserves %}
 	      <td scope="row" class="px-2 text-nowrap">
-		{% if d is None %}
-		□
+		{% if r is None %}
+		<a href="{% url 'main:reserve' sr.seat.id target_month.year target_month.month forloop.counter %}">□</a>
 		{% else %}
-		{{d.get_full_name}}
+		{% if user.is_authenticated and user == r %}
+		<a href="{% url 'main:cancel' target_month.year target_month.month forloop.counter %}">{{r.get_full_name}}</a>
+		{% else %}
+		{{r.get_full_name}}
+		{% endif %}
 		{% endif %}
 	      </td>
 	      {% endfor %}
