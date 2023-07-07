@@ -14,7 +14,7 @@
     <ul>
       {% for m in messages %}
       <li><div {% if m.tags %}class="{{ m.tags }} m-2"{% endif %}>
-	  {{m}}
+	  {{m}} <span class="badge bg-secondary">New</span>
 	</div></li>
       {% endfor %}
     </ul>
@@ -49,49 +49,48 @@
 
 <div class="row my-4">
   <div class="col-12">
-    <div>
-      <a href="{% url 'main:top' prev_month.year prev_month.month %}">前月</a>
-      {{target_month|date:"Y年n月"}}
-      <a href="{% url 'main:top' next_month.year next_month.month %}">次月</a>
-    </div>
-    <form method="post">{% csrf_token %}
-      <div class="table-responsive table-view-area">
-	<table class="table table-success table-striped table-sm">
-	  <thead>
-	    <tr>
-	      <th scope="col" class="px-2"></th>
-	      {% for d in target_days %}
-	      <td scope="col" class="px-2 th-top-sticky text-nowrap">
-		{{d|date:"j(D)"}}</td>
-	      {% endfor %}
-	    </tr>
-	  </thead>
-	  <tbody>
-	    {% for sr in seat_reserves %}
-	    <tr>
-	      <th scope="row" class="px-2 th-left-sticky text-nowrap">
-		{{sr.seat.name}}</th>
-	      {% for r in sr.reserves %}
-	      <td scope="row" class="px-2 text-nowrap">
-		{% if r is None %}
-		<a href="{% url 'main:reserve' sr.seat.id target_month.year target_month.month forloop.counter %}">□</a>
-		{% else %}
-		{% if user.is_authenticated and user == r %}
-		<a href="{% url 'main:cancel' target_month.year target_month.month forloop.counter %}">{{r.get_full_name}}</a>
-		{% else %}
-		{{r.get_full_name}}
-		{% endif %}
-		{% endif %}
-	      </td>
-	      {% endfor %}
-	    </tr>
-	    {% empty %}
-	    <tr><th></th><td class="row">(ありません)</td><td></td></tr>
+    <nav aria-label="Month navigation">
+      <ul class="pagination">
+	<li class="page-item"><a class="page-link" href="{% url 'main:top' prev_month.year prev_month.month %}">前月</a></li>
+	<li class="page-item"><span class="lead">{{target_month|date:"Y年n月"}}</span></li>
+	<li class="page-item"><a class="page-link" href="{% url 'main:top' next_month.year next_month.month %}">次月</a></li>
+      </ul>
+    </nav>
+    <div class="table-responsive table-view-area">
+      <table class="table table-striped table-sm">
+	<thead>
+	  <tr>
+	    <th scope="col" class="px-2"></th>
+	    {% for d in target_days %}
+	    <td scope="col" class="px-2 th-top-sticky text-nowrap">
+	      {{d|date:"j(D)"}}</td>
 	    {% endfor %}
-	  </tbody>
-	</table>
-      </div>
-    </form>
+	  </tr>
+	</thead>
+	<tbody>
+	  {% for sr in seat_reserves %}
+	  <tr>
+	    <th scope="row" class="px-2 th-left-sticky text-nowrap">
+	      <a class="btn" data-bs-toggle="popover" title="{{sr.seat.name}}" data-bs-content="{{sr.seat.comments|yesno:",まだデータはありません。"}}">{{sr.seat.name}}</a></th>
+
+	    {% for r in sr.reserves %}
+	    <td scope="row" class="px-2 text-nowrap">
+	      {% if r is None %}
+	      <a href="{% url 'main:reserve' sr.seat.id target_month.year target_month.month forloop.counter %}">□</a>
+	      {% elif user.is_authenticated and user == r %}
+	      <a href="{% url 'main:cancel' target_month.year target_month.month forloop.counter %}">{{r.get_full_name}}</a>
+	      {% else %}
+	      {{r.get_full_name}}
+	      {% endif %}
+	    </td>
+	    {% endfor %}
+	  </tr>
+	  {% empty %}
+	  <tr><th></th><td class="row">(ありません)</td><td></td></tr>
+	  {% endfor %}
+	</tbody>
+      </table>
+    </div>
   </div>
 </div>
 {% endblock %}

@@ -4,7 +4,6 @@ from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django import forms
 from . import apps, models
 import datetime
 
@@ -45,17 +44,8 @@ class MonthUtils:
         return [t.replace(day=i+1) for i in range(self.last_day.day)]
 
 
-class TopView(generic.FormView):
+class TopView(generic.TemplateView):
     template_name = apps.AppConfig.name + '/top.html'
-
-    def get_form(self, form_class=None):
-        class _Form(forms.Form):
-            pass
-
-        return _Form(**self.get_form_kwargs())
-
-    def get_success_url(self):
-        return reverse('main:top')
 
     def get_context_data(self, **kwargs):
         m = MonthUtils(**self.kwargs)
