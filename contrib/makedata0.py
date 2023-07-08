@@ -19,47 +19,45 @@ User = get_user_model()
 from main.models import Seat, Reserve
 
 def main():
+    # Seat.objects.all().delete()
     if not Seat.objects.exists():
         make_seats(20)
 
     seats = []
     for s in Seat.objects.filter(is_active=True):
-        print(s)
         seats.append(s)
 
+    # User.objects.all().delete()
     if not User.objects.exists():
         make_users(20)
 
     users = []
     for u in User.objects.filter(is_active=True):
-        print(u)
         users.append(u)
 
+    Reserve.objects.all().delete()
     if not Reserve.objects.exists():
-        make_reserves(users, seats, 20)
-    for r in Reserve.objects.all():
-        print(r)
+        make_reserves(users, seats, 100)
 
 
 def make_reserves(users, seats, n):
     for i in range(n):
         s = seats[int(random.random()*len(seats))]
         u = users[int(random.random()*len(users))]
-        t = datetime.date.today()
-        if Reserve.objects.filter(seat=s, date=t).exists():
-            print('NO', s, t)
-        else:
-            r = Reserve(user=u, seat=s, date=t)
-            r.save()
-        print(r)
+        t = datetime.date.today() + \
+            datetime.timedelta(days=int(random.random()*40))
+        try:
+            r = Reserve.objects.create(user=u, seat=s, date=t)
+        except django.db.utils.IntegrityError as e:
+            print("Skip", str(t), s.name, u.get_full_name(), str(e))
 
 
 def make_seats(n):
     for i in range(n):
         n = f'座席-{i:02d}'
+        c = '27型FHDモニター'
         try:
-            s = Seat(name=n)
-            s.save()
+            s = Seat.objects.create(name=n, comments=c)
             print('created', s)
         except django.db.utils.IntegrityError as e:
             pass

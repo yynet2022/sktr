@@ -71,7 +71,7 @@
 	  {% for sr in seat_reserves %}
 	  <tr>
 	    <th scope="row" class="px-2 th-left-sticky text-nowrap">
-	      <a class="btn" data-bs-toggle="popover" title="{{sr.seat.name}}" data-bs-content="{{sr.seat.comments|yesno:",まだデータはありません。"}}">{{sr.seat.name}}</a></th>
+	      <a class="btn" data-bs-toggle="popover" title="{{sr.seat.name}}" data-bs-content="{% if sr.seat.comments %}{{sr.seat.comments}}{% else %}(データはありません){% endif %}">{{sr.seat.name}}</a></th>
 
 	    {% for r in sr.reserves %}
 	    <td scope="row" class="px-2 text-nowrap">

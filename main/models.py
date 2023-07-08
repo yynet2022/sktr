@@ -6,9 +6,6 @@ from django.contrib.auth import get_user_model
 
 
 User = get_user_model()
-ATYPE_AM = 1
-ATYPE_PM = 2
-ATYPE_ALL = 3
 
 
 class Seat(models.Model):
@@ -23,32 +20,52 @@ class Seat(models.Model):
 
 
 class Reserve(models.Model):
-    ATYPE_CHOICES = (
-        (ATYPE_AM,   '午前'),
-        (ATYPE_PM,   '午後'),
-        (ATYPE_ALL,  '終日'),
-    )
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # default=0
     seat = models.ForeignKey(Seat, on_delete=models.CASCADE)  # default=0
     date = models.DateField('予約日', default=timezone.now)
-    atype = models.IntegerField('AM/PM/終日',
-                                default=ATYPE_ALL, choices=ATYPE_CHOICES)
+    is_am = models.BooleanField('午前', default=True, null=False, blank=False)
+    is_pm = models.BooleanField('午後', default=True, null=False, blank=False)
     create_at = models.DateTimeField('作成時刻', default=timezone.now)
 
     def isAM(self):
-        return self.atype == ATYPE_AM
+        return self.is_am
 
     def isPM(self):
-        return self.atype == ATYPE_PM
+        return self.is_pm
 
     def isALL(self):
-        return self.atype == ATYPE_ALL
+        return self.is_am and self.is_pm
 
     def __str__(self):
         s = "<Reserve:%s," % self.user.get_full_name()
         s += self.seat.name + ","
         s += str(self.date) + ","
-        s += self.get_atype_display() + ">"
+        if self.isALL():
+            s += '終日'
+        elif self.isAM():
+            s += '午前'
+        elif self.isPM():
+            s += '午後'
+        s += ">"
         return s
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "date", "is_am"],
+                name="user_date_am_unique"
+            ),
+            models.UniqueConstraint(
+                fields=["user", "date", "is_pm"],
+                name="user_date_pm_unique"
+            ),
+            models.UniqueConstraint(
+                fields=["seat", "date", "is_am"],
+                name="seat_date_am_unique"
+            ),
+            models.UniqueConstraint(
+                fields=["seat", "date", "is_pm"],
+                name="seat_date_pm_unique"
+            ),
+        ]
