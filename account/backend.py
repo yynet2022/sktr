@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import BaseBackend
-from . import compusers
+from . import compusers, guestusers
 import logging
 
 logger = logging.getLogger(__name__)
@@ -16,9 +16,14 @@ class UserBackend(BaseBackend):
         try:
             user = User.objects.get(uid=uid)
         except User.DoesNotExist:
-            cu = compusers.COMPUser(uid)
-            user = User.objects.create_user(uid=uid)
-            cu.copyto(user)
+            try:
+                gu = guestusers.GuestUser(uid)
+                user = User.objects.create_user(uid=gu.uid)
+                gu.copyto(user)
+            except Exception:
+                cu = compusers.COMPUser(uid)
+                user = User.objects.create_user(uid=cu.uid)
+                cu.copyto(user)
 
         user.is_active = True
         user.save()
