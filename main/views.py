@@ -53,6 +53,11 @@ class TopView(generic.TemplateView):
         abase = [None] * len(days)
         seats = models.Seat.objects.filter(is_active=True)
 
+        if self.request.user.is_authenticated:
+            for r in models.Reserve.objects.filter(
+                    user=self.request.user, date__range=(days[0], days[-1])):
+                abase[r.date.day-1] = False
+
         def _get_seat_reserves():
             for s in seats:
                 a = abase.copy()
@@ -81,16 +86,16 @@ class ReserveView(generic.RedirectView):
         if self.request.user.is_authenticated:
             user = self.request.user
 
-            sid = self.kwargs.get('seatid')
-            year = self.kwargs.get('year')
-            month = self.kwargs.get('month')
-            day = self.kwargs.get('day')
-            kwargs = {'year': year, 'month': month}
-
-            date = datetime.date(year=year, month=month, day=day)
-            seat = models.Seat.objects.get(id=sid)
-            lookup = {'seat': seat, 'date': date}
             try:
+                sid = self.kwargs.get('seatid')
+                year = self.kwargs.get('year')
+                month = self.kwargs.get('month')
+                day = self.kwargs.get('day')
+
+                kwargs = {'year': year, 'month': month}
+                date = datetime.date(year=year, month=month, day=day)
+                seat = models.Seat.objects.get(id=sid)
+                lookup = {'seat': seat, 'date': date}
                 s1 = '{}月{}日'.format(date.month, date.day)
 
                 r = models.Reserve.objects.filter(**lookup)
@@ -123,15 +128,17 @@ class CancelView(generic.RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         kwargs = None
         if self.request.user.is_authenticated:
-            year = self.kwargs.get('year')
-            month = self.kwargs.get('month')
-            day = self.kwargs.get('day')
-            kwargs = {'year': year, 'month': month}
-
             user = self.request.user
-            date = datetime.date(year=year, month=month, day=day)
-            lookup = {'user': user, 'date': date}
+
             try:
+                year = self.kwargs.get('year')
+                month = self.kwargs.get('month')
+                day = self.kwargs.get('day')
+
+                kwargs = {'year': year, 'month': month}
+                date = datetime.date(year=year, month=month, day=day)
+                lookup = {'user': user, 'date': date}
+
                 with transaction.atomic():
                     models.Reserve.objects.filter(**lookup).delete()
 

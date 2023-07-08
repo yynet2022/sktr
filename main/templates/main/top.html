@@ -75,8 +75,11 @@
 
 	    {% for r in sr.reserves %}
 	    <td scope="row" class="px-2 text-nowrap">
-	      {% if r is None %}
+	      {% if r is False %}
+	      {% elif user.is_authenticated and r is None %}
 	      <a href="{% url 'main:reserve' sr.seat.id target_month.year target_month.month forloop.counter %}">□</a>
+	      {% elif r is None %}
+	      □
 	      {% elif user.is_authenticated and user == r %}
 	      <a href="{% url 'main:cancel' target_month.year target_month.month forloop.counter %}">{{r.get_full_name}}</a>
 	      {% else %}
