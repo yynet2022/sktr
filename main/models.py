@@ -28,6 +28,11 @@ class Reserve(models.Model):
     is_pm = models.BooleanField('午後', default=True, null=False, blank=False)
     create_at = models.DateTimeField('作成時刻', default=timezone.now)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.is_am and not self.is_pm:
+            raise ValueError('Reserve failed: both am/pm are False.')
+
     def isAM(self):
         return self.is_am
 
