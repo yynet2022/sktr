@@ -21,7 +21,7 @@ from main.models import Seat, Reserve
 def main():
     # Seat.objects.all().delete()
     if not Seat.objects.exists():
-        make_seats(20)
+        make_seats(50)
 
     seats = []
     for s in Seat.objects.filter(is_active=True):

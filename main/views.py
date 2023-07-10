@@ -9,6 +9,7 @@ import datetime
 
 
 User = get_user_model()
+SKTR_FOCUS_KEY = 'sktr_focus_id'
 
 
 class MonthUtils:
@@ -66,12 +67,19 @@ class TopView(generic.TemplateView):
                     a[r.date.day-1] = r.user
                 yield {'seat': s, 'reserves': a}
 
+        fid = None
+        s = self.request.session.get(SKTR_FOCUS_KEY)
+        if s is not None:
+            fid = f'{s[0]}-{s[1]}-{s[2]}-{s[3]}'
+            del self.request.session[SKTR_FOCUS_KEY]
+
         kwargs.update({
             'target_month': m.target,
             'target_days': days,
             'prev_month': m.prev_month,
             'next_month': m.next_month,
             'seat_reserves': _get_seat_reserves(),
+            'focus_id': fid,
         })
         return super().get_context_data(**kwargs)
 
@@ -118,6 +126,8 @@ class ReserveView(generic.RedirectView):
                 s2 = seat.name
                 messages.success(self.request,
                                  f'{s1} の <{s2}> を予約しました。')
+                self.request.session[SKTR_FOCUS_KEY] = (
+                    str(sid), year, month, day)
             except Exception as e:
                 messages.warning(self.request, '予約失敗: ' + str(e))
 
@@ -131,6 +141,7 @@ class CancelView(generic.RedirectView):
             user = self.request.user
 
             try:
+                sid = ''
                 year = self.kwargs.get('year')
                 month = self.kwargs.get('month')
                 day = self.kwargs.get('day')
@@ -140,11 +151,16 @@ class CancelView(generic.RedirectView):
                 lookup = {'user': user, 'date': date}
 
                 with transaction.atomic():
-                    models.Reserve.objects.filter(**lookup).delete()
+                    r = models.Reserve.objects.filter(**lookup)
+                    if r.exists():
+                        sid = r[0].seat.id
+                        r.delete()
 
                 s1 = '{}月{}日'.format(date.month, date.day)
                 messages.success(self.request,
                                  f'{s1} の予約をキャンセルしました。')
+                self.request.session[SKTR_FOCUS_KEY] = (
+                    str(sid), year, month, day)
             except Exception as e:
                 messages.warning(self.request, 'キャンセル失敗: ' + str(e))
 
