@@ -52,7 +52,7 @@ class TopView(generic.TemplateView):
         m = MonthUtils(**self.kwargs)
         days = m.days
         abase = [None] * len(days)
-        seats = models.Seat.objects.filter(is_active=True)
+        seats = models.Seat.objects.filter(is_active=True).order_by('name')
 
         if self.request.user.is_authenticated:
             for r in models.Reserve.objects.filter(
